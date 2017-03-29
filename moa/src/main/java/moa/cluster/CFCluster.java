@@ -169,4 +169,16 @@ public abstract class CFCluster extends SphereCluster {
 			 a1[i] += a2[i];
 		 }
 	 }
+
+	public double getRadiusFactor() {
+		return radiusFactor;
+	}
+
+	public double[] getLS() {
+		return LS;
+	}
+
+	public double[] getSS() {
+		return SS;
+	}
 }

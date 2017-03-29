@@ -275,7 +275,10 @@ public class Clustering extends AbstractMOAObject{
     }
 
 
-
-
-
+    @Override
+    public String toString() {
+        return "Clustering{" +
+                "clusters=" + clusters +
+                '}';
+    }
 }

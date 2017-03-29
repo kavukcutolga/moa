@@ -20,11 +20,8 @@
 
 package moa.cluster;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
+
 import moa.AbstractMOAObject;
 import com.yahoo.labs.samoa.instances.Instance;
 
@@ -104,6 +101,17 @@ public abstract class Cluster extends AbstractMOAObject {
 
     public void setMeasureValue(String measureKey, String value){
         measure_values.put(measureKey, value);
+    }
+
+    @Override
+    public String toString() {
+        return "Cluster{" +
+                "id=" + id +
+                ", gtLabel=" + gtLabel +
+                ", center=" + Arrays.toString(getCenter()) +
+                ", weight=" + getWeight() +
+                ", measure_values=" + measure_values +
+                '}';
     }
 
     public void setMeasureValue(String measureKey, double value){

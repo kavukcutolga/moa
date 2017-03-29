@@ -1,0 +1,19 @@
+# eclipse related
+.classpath
+.project
+.settings
+# idea related
+*.iml
+.idea
+.DS_Store
+/bin/
+/conf/
+/log/
+logs
+*logs*
+/logs/
+# binary
+**/target/*
+velocity.log*
+#Chronicle Data
+*.dat

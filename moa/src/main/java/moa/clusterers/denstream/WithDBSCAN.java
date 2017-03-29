@@ -320,7 +320,11 @@ public class WithDBSCAN extends AbstractClusterer {
 	public double[] getVotesForInstance(Instance inst) {
 		return null;
 	}
-	
+
+	public boolean isInitialized() {
+		return initialized;
+	}
+
 	public String getParameterString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(this.getClass().getSimpleName() + " ");
@@ -347,4 +351,12 @@ public class WithDBSCAN extends AbstractClusterer {
 		return sb.toString();
 	}
 
+	@Override
+	public String toString() {
+		return "WithDBSCAN{" +
+				"initialized=" + initialized +
+				", timestamp=" + timestamp +
+				",  clusters=" + getClusteringResult() +
+				'}';
+	}
 }
