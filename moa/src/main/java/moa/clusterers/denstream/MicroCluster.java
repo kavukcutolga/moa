@@ -153,4 +153,8 @@ public class MicroCluster extends CFCluster {
         cf.setN(w);
         return cf;
     }
+
+    public double getLambda() {
+        return lambda;
+    }
 }
