@@ -157,4 +157,24 @@ public class MicroCluster extends CFCluster {
     public double getLambda() {
         return lambda;
     }
+
+    public Timestamp getCurrentTimestamp() {
+        return currentTimestamp;
+    }
+
+    public void setLastEditT(long lastEditT) {
+        this.lastEditT = lastEditT;
+    }
+
+    public void setCreationTimestamp(long creationTimestamp) {
+        this.creationTimestamp = creationTimestamp;
+    }
+
+    public void setLambda(double lambda) {
+        this.lambda = lambda;
+    }
+
+    public void setCurrentTimestamp(Timestamp currentTimestamp) {
+        this.currentTimestamp = currentTimestamp;
+    }
 }

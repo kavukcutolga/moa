@@ -39,53 +39,31 @@ import com.yahoo.labs.samoa.instances.Instance;
 public class WithDBSCAN extends AbstractClusterer {
 	
 	private static final long serialVersionUID = 1L;
-	
-	public IntOption horizonOption = new IntOption("horizon", 'h',
-			"Range of the window.", 1000);
-	public FloatOption epsilonOption = new FloatOption("epsilon", 'e',
-			"Defines the epsilon neighbourhood", 0.02, 0, 1);
-	// public IntOption minPointsOption = new IntOption("minPoints", 'p',
-	// "Minimal number of points cluster has to contain.", 10);
-
-	public FloatOption betaOption = new FloatOption("beta", 'b', "", 0.2, 0,
-			1);
-	public FloatOption muOption = new FloatOption("mu", 'm', "", 1, 0,
-			Double.MAX_VALUE);
-	public IntOption initPointsOption = new IntOption("initPoints", 'i',
-			"Number of points to use for initialization.", 1000);
-
-	 public FloatOption offlineOption = new FloatOption("offline", 'o',
-	 "offline multiplier for epsilion.", 2, 2, 20);
-	 
-	 public FloatOption lambdaOption = new FloatOption("lambda", 'l', "",
-			 0.25,
-			 0, 1);
-	 
-	 public IntOption speedOption = new IntOption("processingSpeed", 's',
-				"Number of incoming points per time unit.", 100, 1, 1000);
 
 	private double weightThreshold = 0.01;
-	double lambda;
-	double epsilon;
-	int minPoints;
-	double mu;
-	double beta;
+    private double lambda;
+    private double epsilon;
+    private int minPoints;
+    private double mu;
+    private double beta;
+    private int initPoints;
+    private double offlineOption;
 
-	Clustering p_micro_cluster;
-	Clustering o_micro_cluster;
-	ArrayList<DenPoint> initBuffer;
+    private Clustering p_micro_cluster;
+    private Clustering o_micro_cluster;
+    private ArrayList<DenPoint> initBuffer;
 
-	boolean initialized;
+    private boolean initialized;
 	private long timestamp = 0;
-	Timestamp currentTimestamp;
-	long tp;
+    private Timestamp currentTimestamp;
+    private long tp;
 	
 	/* #point variables */
 	protected int numInitPoints;
 	protected int numProcessedPerUnit;
 	protected int processingSpeed;
-	// TODO Some variables to prevent duplicated processes
 
+	// TODO Some variables to prevent duplicated processes
 	private class DenPoint extends DenseInstance {
 		
 		private static final long serialVersionUID = 1L;
@@ -104,12 +82,14 @@ public class WithDBSCAN extends AbstractClusterer {
 		currentTimestamp = new Timestamp();
 //		lambda = -Math.log(weightThreshold) / Math.log(2)
 //						/ (double) horizonOption.getValue();
-		lambda = lambdaOption.getValue();
+		lambda = 0.25;
 
-		epsilon = epsilonOption.getValue();
-		minPoints = (int) muOption.getValue();// minPointsOption.getValue();
-		mu = (int) muOption.getValue();
-		beta = betaOption.getValue();
+		epsilon = 0.02;
+		minPoints = 1;// minPointsOption.getValue();
+		mu = 1;
+		beta = 0.2;
+        initPoints = 1000;
+        offlineOption = 2;
 
 		initialized = false;
 		p_micro_cluster = new Clustering();
@@ -119,7 +99,7 @@ public class WithDBSCAN extends AbstractClusterer {
 		tp = Math.round(1 / lambda * Math.log((beta * mu) / (beta * mu - 1))) + 1;
 		
 		numProcessedPerUnit = 0;
-		processingSpeed = speedOption.getValue();
+		processingSpeed = 100;
 	}
 
 	public void initialDBScan() {
@@ -158,7 +138,8 @@ public class WithDBSCAN extends AbstractClusterer {
 		// ////////////////
 		if (!initialized) {
 			initBuffer.add(point);
-			if (initBuffer.size() >= initPointsOption.getValue()) {
+            numInitPoints++;
+			if (initBuffer.size() >= initPoints) {
 				initialDBScan();
 				initialized = true;
 			}
@@ -290,7 +271,7 @@ public class WithDBSCAN extends AbstractClusterer {
 	}
 
 	public Clustering getClusteringResult() {
-		DBScan dbscan = new DBScan(p_micro_cluster,offlineOption.getValue() * epsilon, minPoints);
+		DBScan dbscan = new DBScan(p_micro_cluster,offlineOption * epsilon, minPoints);
 		return dbscan.getClustering(p_micro_cluster);
 	}
 
@@ -302,6 +283,10 @@ public class WithDBSCAN extends AbstractClusterer {
 	@Override
 	public Clustering getMicroClusteringResult() {
 		return p_micro_cluster;
+	}
+
+	public Clustering getOutlierClusteringResult() {
+		return o_micro_cluster;
 	}
 
 	@Override
@@ -325,32 +310,6 @@ public class WithDBSCAN extends AbstractClusterer {
 		return initialized;
 	}
 
-	public String getParameterString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append(this.getClass().getSimpleName() + " ");
-
-		sb.append("-" + horizonOption.getCLIChar() + " ");
-		sb.append(horizonOption.getValueAsCLIString() + " ");
-
-		sb.append("-" + epsilonOption.getCLIChar() + " ");
-		sb.append(epsilonOption.getValueAsCLIString() + " ");
-
-		sb.append("-" + betaOption.getCLIChar() + " ");
-		sb.append(betaOption.getValueAsCLIString() + " ");
-
-		sb.append("-" + muOption.getCLIChar() + " ");
-		sb.append(muOption.getValueAsCLIString() + " ");
-
-		sb.append("-" + lambdaOption.getCLIChar() + " ");
-		sb.append(lambdaOption.getValueAsCLIString() + " ");
-
-		sb.append("-" + initPointsOption.getCLIChar() + " ");
-		// NO " " at the end! results in errors on windows systems
-		sb.append(initPointsOption.getValueAsCLIString());
-
-		return sb.toString();
-	}
-
 	@Override
 	public String toString() {
 		return "WithDBSCAN{" +
@@ -359,4 +318,133 @@ public class WithDBSCAN extends AbstractClusterer {
 				",  clusters=" + getClusteringResult() +
 				'}';
 	}
+
+	public double getWeightThreshold() {
+		return weightThreshold;
+	}
+
+	public void setWeightThreshold(double weightThreshold) {
+		this.weightThreshold = weightThreshold;
+	}
+
+	public double getLambda() {
+		return lambda;
+	}
+
+	public void setLambda(double lambda) {
+		this.lambda = lambda;
+		this.tp = Math.round(1 / lambda * Math.log((beta * mu) / (beta * mu - 1))) + 1;
+	}
+
+	public double getEpsilon() {
+		return epsilon;
+	}
+
+	public void setEpsilon(double epsilon) {
+		this.epsilon = epsilon;
+	}
+
+	public int getMinPoints() {
+		return minPoints;
+	}
+
+	public void setMinPoints(int minPoints) {
+		this.minPoints = minPoints;
+	}
+
+	public double getMu() {
+		return mu;
+	}
+
+	public void setMu(double mu) {
+		this.mu = mu;
+		this.tp = Math.round(1 / lambda * Math.log((beta * mu) / (beta * mu - 1))) + 1;
+	}
+
+	public double getBeta() {
+		return beta;
+	}
+
+	public void setBeta(double beta) {
+		this.beta = beta;
+		this.tp = Math.round(1 / lambda * Math.log((beta * mu) / (beta * mu - 1))) + 1;
+	}
+
+	public ArrayList<DenPoint> getInitBuffer() {
+		return initBuffer;
+	}
+
+	public void setInitBuffer(ArrayList<DenPoint> initBuffer) {
+		this.initBuffer = initBuffer;
+	}
+
+	public void setInitialized(boolean initialized) {
+		this.initialized = initialized;
+	}
+
+	public long getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(long timestamp) {
+		this.timestamp = timestamp;
+	}
+
+	public Timestamp getCurrentTimestamp() {
+		return currentTimestamp;
+	}
+
+	public void setCurrentTimestamp(Timestamp currentTimestamp) {
+		this.currentTimestamp = currentTimestamp;
+	}
+
+	public long getTp() {
+		return tp;
+	}
+
+	public void setTp(long tp) {
+		this.tp = tp;
+	}
+
+	public int getNumInitPoints() {
+		return numInitPoints;
+	}
+
+	public void setNumInitPoints(int numInitPoints) {
+		this.numInitPoints = numInitPoints;
+	}
+
+    public int getInitPoints() {
+        return initPoints;
+    }
+
+    public void setInitPoints(int initPoints) {
+        this.initPoints = initPoints;
+    }
+
+    public double getOfflineOption() {
+        return offlineOption;
+    }
+
+    public void setOfflineOption(double offlineOption) {
+        this.offlineOption = offlineOption;
+    }
+
+    public int getNumProcessedPerUnit() {
+		return numProcessedPerUnit;
+	}
+
+	public void setNumProcessedPerUnit(int numProcessedPerUnit) {
+		this.numProcessedPerUnit = numProcessedPerUnit;
+	}
+
+	public int getProcessingSpeed() {
+		return processingSpeed;
+	}
+
+	public void setProcessingSpeed(int processingSpeed) {
+		this.processingSpeed = processingSpeed;
+	}
+
+
 }

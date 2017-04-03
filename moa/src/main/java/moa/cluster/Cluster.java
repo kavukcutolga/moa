@@ -177,4 +177,8 @@ public abstract class Cluster extends AbstractMOAObject {
         return sb.toString();
     }
 
+    public HashMap<String, String> getMeasure_values() {
+        return measure_values;
+    }
+
 }

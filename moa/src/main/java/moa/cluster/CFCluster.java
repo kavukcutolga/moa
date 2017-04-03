@@ -181,4 +181,8 @@ public abstract class CFCluster extends SphereCluster {
 	public double[] getSS() {
 		return SS;
 	}
+
+	public void setRadiusFactor(double radiusFactor) {
+		this.radiusFactor = radiusFactor;
+	}
 }
