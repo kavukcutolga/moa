@@ -24,8 +24,12 @@
 
 package moa.clusterers.denstream;
 
+import com.yahoo.labs.samoa.instances.Attribute;
+import com.yahoo.labs.samoa.instances.Instances;
+import com.yahoo.labs.samoa.instances.InstancesHeader;
 import java.util.ArrayList;
 
+import java.util.List;
 import moa.cluster.Cluster;
 import moa.cluster.Clustering;
 import moa.clusterers.AbstractClusterer;
@@ -119,6 +123,64 @@ public class WithDBSCAN extends AbstractClusterer {
 					point.covered = false;
 				}
 			}
+		}
+	}
+
+	public void addNewAttributeIndexWithDefault(int newAttrIndex,double defaultValue,String paramName){
+		/**
+		 *
+		 * Update init bufffer with default value **
+		 *
+		 */
+		List<DenPoint> newInitBuffer = new ArrayList<DenPoint>();
+		double [] newDoubleArray;
+		double [] tmpArray;
+		Instance inst;
+		InstancesHeader streamHeader;
+		ArrayList<Attribute> attributes;
+		for (int p = 0; p < initBuffer.size(); p++) {
+			attributes = new ArrayList<Attribute>();
+			DenPoint point = initBuffer.get(p);
+			tmpArray = point.toDoubleArray();
+			newDoubleArray = new double[tmpArray.length + 1];
+			int j;
+			for(j = 0 ; j< tmpArray.length ; j ++){
+				attributes.add(point.attribute(j));
+				newDoubleArray[j] = tmpArray[j];
+			}
+			j++;
+			attributes.add(new Attribute(paramName));
+			newDoubleArray[j] = defaultValue;
+			streamHeader = new InstancesHeader(new Instances("Evam Clustering Instance", attributes, j));
+
+			inst = new DenseInstance(1.0, newDoubleArray);
+			inst.setDataset(streamHeader);
+			newInitBuffer.add(new DenPoint(inst,currentTimestamp.getTimestamp()));
+		}
+
+		/***
+		 *
+		 * Update clusters
+		 *
+		 */
+		updateCenterOfClusters(p_micro_cluster,defaultValue);
+		updateCenterOfClusters(o_micro_cluster,defaultValue);
+	}
+
+	private void updateCenterOfClusters(Clustering clustering, double defaultValue) {
+		Cluster cluster;
+		double[] oldClusterCenter;
+		double[] newClusterCenter;
+		for(int i = 0 ; i < clustering.size();i++){
+			cluster = clustering.get(i);
+			 oldClusterCenter = cluster.getCenter();
+			 newClusterCenter = new double[oldClusterCenter.length + 1];
+			 int j;
+			 for(j = 0 ; j < oldClusterCenter.length ; j++){
+				 newClusterCenter[j] = oldClusterCenter[j];
+			 }
+			 j++;
+			 newClusterCenter[j] = defaultValue;
 		}
 	}
 
