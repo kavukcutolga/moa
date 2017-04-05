@@ -29,14 +29,11 @@ import com.yahoo.labs.samoa.instances.Instances;
 import com.yahoo.labs.samoa.instances.InstancesHeader;
 import java.util.ArrayList;
 
-import java.util.List;
 import moa.cluster.Cluster;
 import moa.cluster.Clustering;
 import moa.clusterers.AbstractClusterer;
 import moa.clusterers.macro.dbscan.DBScan;
 import moa.core.Measurement;
-import com.github.javacliparser.FloatOption;
-import com.github.javacliparser.IntOption;
 import com.yahoo.labs.samoa.instances.DenseInstance;
 import com.yahoo.labs.samoa.instances.Instance;
 
@@ -129,10 +126,10 @@ public class WithDBSCAN extends AbstractClusterer {
 	public void addNewAttributeIndexWithDefault(int newAttrIndex,double defaultValue,String paramName){
 		/**
 		 *
-		 * Update init bufffer with default value **
+		 * Update init buffer with default value **
 		 *
 		 */
-		List<DenPoint> newInitBuffer = new ArrayList<DenPoint>();
+		ArrayList<DenPoint> newInitBuffer = new ArrayList<DenPoint>();
 		double [] newDoubleArray;
 		double [] tmpArray;
 		Instance inst;
@@ -148,40 +145,104 @@ public class WithDBSCAN extends AbstractClusterer {
 				attributes.add(point.attribute(j));
 				newDoubleArray[j] = tmpArray[j];
 			}
-			j++;
 			attributes.add(new Attribute(paramName));
 			newDoubleArray[j] = defaultValue;
-			streamHeader = new InstancesHeader(new Instances("Evam Clustering Instance", attributes, j));
+			streamHeader = new InstancesHeader(new Instances("Evam Clustering Instance", attributes, tmpArray.length + 1));
 
 			inst = new DenseInstance(1.0, newDoubleArray);
 			inst.setDataset(streamHeader);
 			newInitBuffer.add(new DenPoint(inst,currentTimestamp.getTimestamp()));
 		}
+		initBuffer = newInitBuffer;
 
 		/***
 		 *
 		 * Update clusters
 		 *
 		 */
-		updateCenterOfClusters(p_micro_cluster,defaultValue);
-		updateCenterOfClusters(o_micro_cluster,defaultValue);
+		p_micro_cluster = addNewDimensionToEnd(p_micro_cluster,defaultValue);
+		o_micro_cluster = addNewDimensionToEnd(o_micro_cluster,defaultValue);
 	}
 
-	private void updateCenterOfClusters(Clustering clustering, double defaultValue) {
-		Cluster cluster;
-		double[] oldClusterCenter;
-		double[] newClusterCenter;
-		for(int i = 0 ; i < clustering.size();i++){
-			cluster = clustering.get(i);
-			 oldClusterCenter = cluster.getCenter();
-			 newClusterCenter = new double[oldClusterCenter.length + 1];
-			 int j;
-			 for(j = 0 ; j < oldClusterCenter.length ; j++){
-				 newClusterCenter[j] = oldClusterCenter[j];
-			 }
-			 j++;
-			 newClusterCenter[j] = defaultValue;
+	public void dropIndice(int index){
+		ArrayList<DenPoint> newInitBuffer = new ArrayList<DenPoint>();
+		double [] newDoubleArray;
+		double [] tmpArray;
+		Instance inst;
+		InstancesHeader streamHeader;
+		ArrayList<Attribute> attributes;
+
+		for (int p = 0; p < initBuffer.size(); p++) {
+			int offset = 0;
+			attributes = new ArrayList<Attribute>();
+			DenPoint point = initBuffer.get(p);
+			tmpArray = point.toDoubleArray();
+			newDoubleArray = new double[tmpArray.length - 1];
+			for(int j = 0 ; j< tmpArray.length ; j ++){
+				if(j == index){
+					offset = -1;
+					continue;
+				}
+				attributes.add(point.attribute(j));
+				newDoubleArray[j + offset] = tmpArray[j];
+			}
+			streamHeader = new InstancesHeader(new Instances("Evam Clustering Instance", attributes, tmpArray.length - 1));
+			inst = new DenseInstance(1.0, newDoubleArray);
+			inst.setDataset(streamHeader);
+			newInitBuffer.add(new DenPoint(inst,currentTimestamp.getTimestamp()));
 		}
+		initBuffer = newInitBuffer;
+		p_micro_cluster = dropIndiceFromClustering(p_micro_cluster,index);
+		o_micro_cluster = dropIndiceFromClustering(o_micro_cluster,index);
+	}
+
+	private Clustering dropIndiceFromClustering(Clustering micro_cluster, int index) {
+		Clustering newMicroClustering = new Clustering();
+		MicroCluster cluster;
+		double[] oldCenter;
+		double[] newCenter;
+		MicroCluster microCluster;
+		for(int i = 0 ; i < micro_cluster.size();i++){
+			cluster = (MicroCluster) micro_cluster.get(i);
+			oldCenter = cluster.getCenter();
+			newCenter = new double[oldCenter.length - 1];
+			int offset = 0;
+			for(int j = 0 ; j < oldCenter.length ; j++){
+				if(j == index){
+					offset = -1;
+					continue;
+				}
+				newCenter[j + offset] = oldCenter[j];
+			}
+			microCluster = new MicroCluster(newCenter,newCenter.length,cluster.getCreationTime(),
+					cluster.getLambda(),
+					cluster.getCurrentTimestamp());
+			newMicroClustering.add(microCluster);
+		}
+		return newMicroClustering;
+	}
+
+	private Clustering addNewDimensionToEnd(Clustering micro_cluster, double defaultValue) {
+		Clustering newMicroClustering = new Clustering();
+		MicroCluster cluster;
+		double[] oldCenter;
+		double[] newCenter;
+		MicroCluster microCluster;
+		for(int i = 0 ; i < micro_cluster.size();i++){
+			cluster = (MicroCluster) micro_cluster.get(i);
+			oldCenter = cluster.getCenter();
+			newCenter = new double[oldCenter.length + 1];
+			 int j;
+			 for(j = 0 ; j < oldCenter.length ; j++){
+				 newCenter[j] = oldCenter[j];
+			 }
+			newCenter[j] = defaultValue;
+			microCluster = new MicroCluster(newCenter,newCenter.length,cluster.getCreationTime(),
+					cluster.getLambda(),
+					cluster.getCurrentTimestamp());
+			newMicroClustering.add(microCluster);
+		}
+		return newMicroClustering;
 	}
 
 	@Override
